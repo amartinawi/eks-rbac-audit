@@ -1,0 +1,254 @@
+/* Self-contained report styling. No external font, image, or stylesheet:
+   the report must render identically with the machine offline. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #1f2328;
+  background: #f6f8fa;
+  line-height: 1.5;
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
+
+/* ---------- hero ---------- */
+header.hero {
+  background: linear-gradient(135deg, #0b2e4f, #1168a3);
+  color: #fff;
+  border-radius: 16px;
+  padding: 28px 30px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+}
+header.hero h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; font-weight: 600; opacity: .9; }
+/* The cluster is what identifies this report; it leads visually over the
+   generic tool name above it. */
+header.hero p.cluster {
+  margin: 2px 0 4px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+header.hero p.lede { margin: 2px 0 0; opacity: .9; font-size: 13.5px; }
+.meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+/* Solid light chips with dark text. Translucent-white-on-gradient looks tidy
+   but leaves the values — the part the reader actually came for — at roughly
+   2:1 contrast, which is unreadable. */
+.meta span {
+  background: rgba(255, 255, 255, .95);
+  color: #33404d;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.meta span.ro { background: #1a7f37; color: #fff; font-weight: 700; }
+header.hero code {
+  background: rgba(11, 46, 79, .09);
+  border-color: rgba(11, 46, 79, .18);
+  color: #0b2e4f;
+  font-weight: 600;
+}
+
+/* ---------- section navigation ---------- */
+nav.toc {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  background: rgba(246, 248, 250, .94);
+  backdrop-filter: blur(6px);
+  border: 1px solid #d9dee3;
+  border-radius: 10px;
+}
+nav.toc a {
+  color: #1168a3;
+  text-decoration: none;
+  font-size: 12.5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+}
+nav.toc a:hover { background: #e8eef5; text-decoration: none; }
+
+/* ---------- KPI tiles ---------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.tile {
+  background: #fff;
+  border: 1px solid #d9dee3;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.tile .n { font-size: 26px; font-weight: 800; color: #0b2e4f; line-height: 1.15; }
+.tile .l {
+  font-size: 11px;
+  color: #5b6470;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ---------- severity bar ---------- */
+.sevbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }
+.sevbar .s { flex: 1; min-width: 110px; color: #fff; border-radius: 10px; padding: 10px 12px; }
+.sevbar .s .v { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.sevbar .s .k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .93; }
+
+/* ---------- sections ---------- */
+section {
+  background: #fff;
+  border: 1px solid #d9dee3;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin: 18px 0;
+  scroll-margin-top: 64px;
+}
+section h2 { margin: 0 0 4px; font-size: 18px; color: #0b2e4f; }
+section h3 { margin: 20px 0 6px; font-size: 14.5px; color: #33404d; }
+section .sub { color: #5b6470; font-size: 13px; margin: 0 0 14px; }
+
+/* ---------- finding cards ---------- */
+.card {
+  border: 1px solid #e3e8ee;
+  border-radius: 12px;
+  background: #fbfcfd;
+  padding: 16px 18px;
+  margin: 14px 0;
+  border-left-width: 5px;
+  border-left-style: solid;
+}
+.card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.card-head h3 { margin: 0; font-size: 15.5px; flex: 1 1 320px; }
+.badge {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #5b6470;
+  background: #eef2f6;
+  border: 1px solid #d9dee3;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.tag.unverified { color: #8a6100; background: #fff5e0; border-color: #f0d9a5; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.lbl {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #6b7480;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+ul.ev, ul.rem { margin: 0; padding-left: 18px; }
+ul.ev li, ul.rem li { font-size: 13px; margin: 5px 0; line-height: 1.45; overflow-wrap: anywhere; }
+ul.rem li { color: #1a6b31; }
+.impact {
+  margin-top: 12px;
+  background: #fff8e6;
+  border: 1px solid #f1d999;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12.8px;
+  color: #5c4400;
+}
+.impact .lbl { display: inline; color: #8a6100; margin-right: 6px; }
+
+/* ---------- tables ---------- */
+.tablewrap { overflow-x: auto; }
+table.dt { border-collapse: collapse; width: 100%; font-size: 12.6px; margin-top: 6px; }
+table.dt th, table.dt td {
+  text-align: left;
+  border: 1px solid #e3e8ee;
+  padding: 7px 9px;
+  vertical-align: top;
+}
+table.dt th { background: #eef2f6; color: #33404d; font-weight: 700; white-space: nowrap; }
+table.dt tr:nth-child(even) td { background: #fafbfc; }
+
+details.collapsible > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: #1168a3;
+  padding: 6px 0;
+  user-select: none;
+}
+details.collapsible > summary:hover { text-decoration: underline; }
+
+/* ---------- inline chips and code ---------- */
+.grp {
+  display: inline-block;
+  background: #eef2f6;
+  border: 1px solid #d3dae2;
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-size: 11.5px;
+  margin: 1px;
+  white-space: nowrap;
+}
+.grp.master { background: #fdecec; border-color: #f3b4b4; color: #b42318; font-weight: 700; }
+.grp.node { background: #eef6ff; border-color: #bcd8f5; color: #14507f; }
+
+code, .mono {
+  background: #eef2f6;
+  border: 1px solid #e0e6ec;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  overflow-wrap: anywhere;
+}
+/* The account id repeats on every ARN; de-emphasising it lets the eye land on
+   the principal name, which is the part that differs row to row. */
+.arn .dim { color: #98a2ad; }
+.arn .name { font-weight: 700; color: #1f2328; }
+
+.note { font-size: 12.5px; color: #5b6470; }
+ul.plain { margin: 6px 0 0; padding-left: 18px; }
+ul.plain li { font-size: 13px; margin: 4px 0; }
+ul.positives li { color: #1a6b31; }
+ul.warnings li { color: #8a6100; }
+
+footer { margin-top: 26px; color: #5b6470; font-size: 12px; text-align: center; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .tiles { grid-template-columns: repeat(3, 1fr); }
+  .grid2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .wrap { padding: 18px 14px 60px; }
+}
+
+/* ---------- print ---------- */
+@media print {
+  body { background: #fff; }
+  nav.toc { display: none; }
+  section, .card { break-inside: avoid; box-shadow: none; }
+  header.hero { background: #0b2e4f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .badge, .sevbar .s { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  details.collapsible { display: block; }
+  details.collapsible > summary { display: none; }
+}

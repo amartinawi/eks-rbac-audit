@@ -1,0 +1,55 @@
+name: Propose a finding rule
+description: A misconfiguration the audit should detect but does not
+labels: [rule]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [docs/writing-rules.md](../../docs/writing-rules.md) for how rules are
+        structured. A good rule proposal answers three questions: what is
+        detectable, why it matters, and what the operator should do about it.
+
+  - type: textarea
+    id: detects
+    attributes:
+      label: What should be detected
+      description: >
+        Be specific about the RBAC or EKS state involved — which object, which
+        verbs, which resources.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Proposed severity
+      options: [CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL]
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What can an attacker or a mistake actually do with this? Be concrete.
+    validations:
+      required: true
+
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Remediation
+      description: What should the operator change? Actionable steps, not "review this".
+    validations:
+      required: true
+
+  - type: textarea
+    id: false-positives
+    attributes:
+      label: When would this fire wrongly?
+      description: >
+        Every rule has a legitimate case that looks identical. Naming it up front
+        is what keeps the report trustworthy — e.g. upstream default roles grant
+        Secret read by design.
+    validations:
+      required: true

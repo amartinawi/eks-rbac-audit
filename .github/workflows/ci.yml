@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+      - name: Verify the tool imports and reports its version
+        run: python eks_rbac_audit.py --version
+
+  no-pyyaml:
+    name: pytest without PyYAML (fallback parser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # PyYAML is optional: the aws-auth parser falls back to a built-in
+      # implementation. This job proves the fallback path is not merely tested
+      # by monkeypatching, but actually works when the import is unavailable.
+      - name: Install without PyYAML
+        run: |
+          python -m pip install --upgrade pip
+          pip install "Jinja2>=3.1" pytest
+
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+  read-only-guarantee:
+    name: Read-only guarantee
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+
+      # The project's central invariant. Called out as its own job so a failure
+      # is unmistakable in the checks list rather than buried in the suite.
+      - name: Assert every mutating command is refused
+        run: python -m pytest tests/test_kubectl.py -v
+
+      - name: Assert no mutating verb is reachable in the allowlist
+        run: |
+          python - <<'EOF'
+          from eksaudit.kubectl import ALLOWED_VERBS
+          forbidden = {
+              "create", "apply", "delete", "patch", "replace", "edit", "scale",
+              "drain", "cordon", "uncordon", "taint", "annotate", "label", "run",
+              "exec", "cp", "rollout", "set", "expose", "autoscale", "attach",
+              "proxy", "port-forward", "debug", "wait", "kustomize",
+          }
+          leaked = ALLOWED_VERBS & forbidden
+          assert not leaked, f"mutating verbs reachable: {sorted(leaked)}"
+          print(f"OK - allowlist is {sorted(ALLOWED_VERBS)}")
+          EOF

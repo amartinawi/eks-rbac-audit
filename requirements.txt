@@ -1,0 +1,11 @@
+# EKS RBAC & API Authentication Audit — runtime dependencies
+# Install into a virtualenv:  python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+Jinja2>=3.1
+
+# PyYAML parses the aws-auth ConfigMap's embedded YAML. It is optional: when it
+# is not importable the auditor falls back to a built-in parser that handles the
+# aws-auth subset (a list of mappings with a `groups` sequence).
+PyYAML>=6.0
+
+# Dev/test only (optional):
+#   pytest>=7.0

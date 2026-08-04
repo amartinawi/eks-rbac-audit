@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eks-rbac-audit"
+version = "1.0.0"
+description = "Read-only Kubernetes RBAC and EKS API authentication audit that produces a self-contained HTML report."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Amar Tinawi", email = "amar.tinawi@gmail.com" }]
+keywords = [
+    "kubernetes", "rbac", "eks", "aws", "security", "audit",
+    "least-privilege", "cluster-admin", "aws-auth", "access-review",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+    "Typing :: Typed",
+]
+dependencies = ["Jinja2>=3.1", "PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/amartinawi/eks-rbac-audit"
+Repository = "https://github.com/amartinawi/eks-rbac-audit"
+Issues = "https://github.com/amartinawi/eks-rbac-audit/issues"
+Changelog = "https://github.com/amartinawi/eks-rbac-audit/blob/main/CHANGELOG.md"
+
+[project.scripts]
+eks-rbac-audit = "eks_rbac_audit:main"
+
+[tool.setuptools]
+packages = ["eksaudit"]
+py-modules = ["eks_rbac_audit"]
+
+[tool.setuptools.package-data]
+"eksaudit" = ["templates/*.j2", "assets/*.css"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

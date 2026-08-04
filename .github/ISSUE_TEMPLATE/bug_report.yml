@@ -1,0 +1,55 @@
+name: Bug report
+description: Something the tool got wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste raw cluster output.** Reports, dumps, and `aws-auth`
+        ConfigMaps contain IAM ARNs, AWS account IDs, and internal namespace
+        names. Redact account IDs to `111122223333` and replace real principal
+        and namespace names before pasting anything.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did the tool do, and what did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: >
+        The command you ran, and ideally a minimal redacted RBAC object that
+        triggers it — a ClusterRole or aws-auth entry with the real names
+        replaced is usually enough.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `python3 eks_rbac_audit.py --version`
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, OS, kubectl version, and cluster type (EKS, OpenShift, kind, ...)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have removed AWS account IDs, ARNs, and internal names from everything I pasted above.
+          required: true

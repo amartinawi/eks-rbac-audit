@@ -1,0 +1,49 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "cluster-admin"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "cluster-admin"
+   },
+   "subjects": [
+    {
+     "kind": "Group",
+     "name": "system:masters"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "system:public-info-viewer"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "system:public-info-viewer"
+   },
+   "subjects": [
+    {
+     "kind": "Group",
+     "name": "system:unauthenticated"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "app-viewer"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "app-viewer"
+   },
+   "subjects": [
+    {
+     "kind": "Group",
+     "name": "app-viewer"
+    }
+   ]
+  }
+ ]
+}

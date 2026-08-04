@@ -1,0 +1,102 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "cluster-admin",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "cluster-admin"
+   },
+   "subjects": [
+    {
+     "kind": "Group",
+     "name": "system:masters"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "eks:addon-cluster-admin"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "cluster-admin"
+   },
+   "subjects": [
+    {
+     "kind": "User",
+     "name": "eks:addon-manager"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "system:public-info-viewer",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "system:public-info-viewer"
+   },
+   "subjects": [
+    {
+     "kind": "Group",
+     "name": "system:unauthenticated"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "cluster-reader"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "cluster-reader"
+   },
+   "subjects": [
+    {
+     "kind": "Group",
+     "name": "cluster-reader"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "ingress-controller"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "ingress-controller"
+   },
+   "subjects": [
+    {
+     "kind": "ServiceAccount",
+     "name": "ingress-controller",
+     "namespace": "ingress"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "efs-csi-provisioner-secrets"
+   },
+   "roleRef": {
+    "kind": "ClusterRole",
+    "name": "efs-csi-provisioner-secrets"
+   },
+   "subjects": [
+    {
+     "kind": "ServiceAccount",
+     "name": "efs-csi-controller",
+     "namespace": "kube-system"
+    }
+   ]
+  }
+ ]
+}

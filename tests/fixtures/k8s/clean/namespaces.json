@@ -1,0 +1,14 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "default"
+   }
+  },
+  {
+   "metadata": {
+    "name": "kube-system"
+   }
+  }
+ ]
+}

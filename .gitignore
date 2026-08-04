@@ -1,0 +1,14 @@
+# Reports & raw dumps
+eks_rbac_auth_audit_*.html
+*.html
+audit-*/
+output/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+*.egg-info/

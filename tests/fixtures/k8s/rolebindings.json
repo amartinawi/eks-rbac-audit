@@ -1,0 +1,38 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "ingress-controller",
+    "namespace": "ingress"
+   },
+   "roleRef": {
+    "kind": "Role",
+    "name": "ingress-controller"
+   },
+   "subjects": [
+    {
+     "kind": "ServiceAccount",
+     "name": "ingress-controller",
+     "namespace": "ingress"
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "leader-election",
+    "namespace": "kube-system"
+   },
+   "roleRef": {
+    "kind": "Role",
+    "name": "leader-election"
+   },
+   "subjects": [
+    {
+     "kind": "ServiceAccount",
+     "name": "autoscaler",
+     "namespace": "kube-system"
+    }
+   ]
+  }
+ ]
+}

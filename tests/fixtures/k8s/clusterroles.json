@@ -1,0 +1,279 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "cluster-admin",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    },
+    "annotations": {
+     "rbac.authorization.kubernetes.io/autoupdate": "true"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      "*"
+     ],
+     "resources": [
+      "*"
+     ],
+     "verbs": [
+      "*"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "admin",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    },
+    "annotations": {
+     "rbac.authorization.kubernetes.io/autoupdate": "true"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets",
+      "configmaps"
+     ],
+     "verbs": [
+      "get",
+      "list",
+      "watch"
+     ]
+    },
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "pods/exec"
+     ],
+     "verbs": [
+      "create"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "edit",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults",
+     "rbac.authorization.k8s.io/aggregate-to-admin": "true"
+    },
+    "annotations": {
+     "rbac.authorization.kubernetes.io/autoupdate": "true"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    },
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "pods/exec"
+     ],
+     "verbs": [
+      "create"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "view",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    },
+    "annotations": {
+     "rbac.authorization.kubernetes.io/autoupdate": "true"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "pods"
+     ],
+     "verbs": [
+      "get",
+      "list",
+      "watch"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "system:public-info-viewer",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "rules": [
+    {
+     "nonResourceURLs": [
+      "/healthz",
+      "/version"
+     ],
+     "verbs": [
+      "get"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "system:controller:expand-controller",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "cluster-reader"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      "*"
+     ],
+     "resources": [
+      "deployments",
+      "pods",
+      "pods/log",
+      "configmaps",
+      "secrets",
+      "services",
+      "namespaces"
+     ],
+     "verbs": [
+      "get",
+      "list",
+      "watch"
+     ]
+    },
+    {
+     "apiGroups": [
+      "*"
+     ],
+     "resources": [
+      "pods/exec"
+     ],
+     "verbs": [
+      "create"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "efs-csi-provisioner-secrets"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "ingress-controller"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets"
+     ],
+     "verbs": [
+      "get",
+      "list",
+      "watch"
+     ]
+    },
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "services",
+      "endpoints"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "metrics-collector"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      "metrics.k8s.io"
+     ],
+     "resources": [
+      "pods",
+      "nodes"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    }
+   ]
+  }
+ ]
+}

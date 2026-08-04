@@ -1,0 +1,1 @@
+Kubernetes control plane is running at https://EXAMPLE0123456789.gr7.eu-west-1.eks.amazonaws.com

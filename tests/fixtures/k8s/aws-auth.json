@@ -1,0 +1,13 @@
+{
+ "apiVersion": "v1",
+ "kind": "ConfigMap",
+ "metadata": {
+  "name": "aws-auth",
+  "namespace": "kube-system"
+ },
+ "data": {
+  "mapAccounts": "[]\n",
+  "mapRoles": "- groups:\n  - system:bootstrappers\n  - system:nodes\n  rolearn: arn:aws:iam::111122223333:role/eks-node-group-web\n  username: system:node:{{EC2PrivateDNSName}}\n- groups:\n  - system:bootstrappers\n  - system:nodes\n  rolearn: arn:aws:iam::111122223333:role/eks-node-group-batch\n  username: system:node:{{EC2PrivateDNSName}}\n- groups:\n  - system:masters\n  rolearn: arn:aws:iam::111122223333:role/platform-engineer\n  username: platform-engineer\n- groups:\n  - system:masters\n  rolearn: arn:aws:iam::111122223333:role/ci-pipeline-role\n  username: ci-pipeline\n- groups:\n  - cluster-reader\n  rolearn: arn:aws:iam::111122223333:role/report-exporter-lambda\n  username: report-exporter\n",
+  "mapUsers": "- \"groups\":\n  - \"system:masters\"\n  \"userarn\": \"arn:aws:iam::111122223333:user/build-bot\"\n  \"username\": \"build-bot\"\n- \"groups\":\n  - \"system:masters\"\n  \"userarn\": \"arn:aws:iam::111122223333:user/alice\"\n  \"username\": \"alice\"\n- \"groups\":\n  - \"system:masters\"\n  \"userarn\": \"arn:aws:iam::111122223333:user/bob\"\n  \"username\": \"bob\"\n- \"groups\":\n  - \"system:masters\"\n  \"userarn\": \"arn:aws:iam::111122223333:user/carol\"\n  \"username\": \"carol\"\n- \"groups\":\n  - \"cluster-reader\"\n  \"userarn\": \"arn:aws:iam::111122223333:user/qa-analyst\"\n  \"username\": \"qa-analyst\"\n"
+ }
+}

@@ -1,0 +1,7 @@
+{
+  "include": ["eksaudit", "eks_rbac_audit.py", "tests"],
+  "extraPaths": ["."],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning"
+}

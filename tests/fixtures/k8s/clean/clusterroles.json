@@ -1,0 +1,89 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "cluster-admin",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      "*"
+     ],
+     "resources": [
+      "*"
+     ],
+     "verbs": [
+      "*"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "view",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "pods"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "system:public-info-viewer",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "rules": [
+    {
+     "nonResourceURLs": [
+      "/healthz",
+      "/version"
+     ],
+     "verbs": [
+      "get"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "app-viewer"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      "apps",
+      ""
+     ],
+     "resources": [
+      "deployments",
+      "pods",
+      "pods/log"
+     ],
+     "verbs": [
+      "get",
+      "list",
+      "watch"
+     ]
+    }
+   ]
+  }
+ ]
+}

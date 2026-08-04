@@ -1,0 +1,68 @@
+{
+ "items": [
+  {
+   "metadata": {
+    "name": "ingress-controller",
+    "namespace": "ingress"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets"
+     ],
+     "verbs": [
+      "get",
+      "list"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "leader-election",
+    "namespace": "kube-system"
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      "coordination.k8s.io"
+     ],
+     "resources": [
+      "leases"
+     ],
+     "verbs": [
+      "get",
+      "update",
+      "create"
+     ]
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "name": "system:controller:token-cleaner",
+    "namespace": "kube-system",
+    "labels": {
+     "kubernetes.io/bootstrapping": "rbac-defaults"
+    }
+   },
+   "rules": [
+    {
+     "apiGroups": [
+      ""
+     ],
+     "resources": [
+      "secrets"
+     ],
+     "verbs": [
+      "delete",
+      "list"
+     ]
+    }
+   ]
+  }
+ ]
+}

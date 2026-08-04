@@ -1,0 +1,303 @@
+{#- Single self-contained report. Every value is autoescaped; the only Markup
+    comes from the arn/group_chip filters, which escape their own inputs. -#}
+{%- macro table_wrap(count, threshold, label) -%}
+{% if count > threshold %}
+<details class="collapsible">
+  <summary>Show all {{ count }} {{ label }}</summary>
+  <div class="tablewrap">{{ caller() }}</div>
+</details>
+{% else %}
+<div class="tablewrap">{{ caller() }}</div>
+{% endif %}
+{%- endmacro -%}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+{% set report_title = "EKS RBAC & API Authentication Audit" if is_eks_report
+   else "Kubernetes RBAC & API Authentication Audit" %}
+<title>{{ report_title }} — {{ meta.cluster_name or meta.context }}</title>
+<style>{{ styles }}</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>{{ report_title }}</h1>
+  <p class="cluster">{{ meta.cluster_name or meta.context }}</p>
+  <p class="lede">
+    {% if is_eks_report %}
+    Kubernetes role-based access control and EKS identity mapping review
+    {% else %}
+    Kubernetes role-based access control review — this cluster has no EKS identity layer
+    {% endif %}
+  </p>
+  <div class="meta">
+    {% if meta.cluster_name %}
+    <span>Cluster: <code>{{ meta.cluster_name }}</code></span>
+    {% endif %}
+    <span>Context: <code>{{ meta.context }}</code></span>
+    {% if meta.account_id %}
+    <span>AWS account: <code>{{ meta.account_id }}</code></span>
+    {% endif %}
+    {% if meta.region %}
+    <span>Region: <code>{{ meta.region }}</code></span>
+    {% endif %}
+    {% if meta.server_version %}
+    <span>Server: <code>{{ meta.server_version }}</code></span>
+    {% endif %}
+    {% if eks and eks.authentication_mode %}
+    <span>Auth mode: <code>{{ eks.authentication_mode }}</code></span>
+    {% endif %}
+    <span>Generated: {{ generated_at }}</span>
+    <span class="ro">Mode: read-only</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#summary">Executive summary</a>
+  <a href="#findings">Findings</a>
+  {% if result.aws_auth_present %}<a href="#auth">aws-auth principals</a>{% endif %}
+  {% if eks and eks.access_entries %}<a href="#entries">Access entries</a>{% endif %}
+  <a href="#rbac">RBAC inventory</a>
+  <a href="#sa">ServiceAccount posture</a>
+  <a href="#method">Methodology</a>
+</nav>
+
+<div class="tiles">
+  {% for tile in tiles %}
+  <div class="tile">
+    <div class="n"{% if tile.color %} style="color:{{ tile.color }}"{% endif %}>{{ tile.n }}</div>
+    <div class="l">{{ tile.label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="sevbar">
+  {% for bucket in severity_bar %}
+  <div class="s" style="background:{{ bucket.color }}">
+    <div class="v">{{ bucket.count }}</div>
+    <div class="k">{{ bucket.name }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<section id="summary">
+  <h2>Executive summary</h2>
+  <p class="sub">Severity-weighted findings across EKS authentication and Kubernetes RBAC.</p>
+  <p>{{ summary }}</p>
+
+  {% if positives %}
+  <h3>What is working well</h3>
+  <ul class="plain positives">
+    {% for item in positives %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if warnings %}
+  <h3>Collection caveats</h3>
+  <p class="sub">Gaps in what could be read. Findings reflect only what was visible.</p>
+  <ul class="plain warnings">
+    {% for item in warnings %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+
+<section id="findings">
+  <h2>Findings</h2>
+  <p class="sub">Sorted by severity. Each lists the evidence read from the cluster, the business
+    impact, and the recommended remediation.</p>
+  {% for finding in findings %}
+  <div class="card" style="border-left-color:{{ finding.severity | sev_color }}">
+    <div class="card-head">
+      <span class="badge" style="background:{{ finding.severity | sev_color }}">{{ finding.severity }}</span>
+      <h3>{{ finding.title }}</h3>
+      {% if finding.unverified %}<span class="tag unverified">unverified</span>{% endif %}
+      <span class="tag">{{ finding.category }}</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev">{% for item in finding.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem">{% for item in finding.remediation %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>{{ finding.impact }}</div>
+  </div>
+  {% endfor %}
+</section>
+
+{% if result.aws_auth_present %}
+<section id="auth">
+  <h2>EKS authentication — <code>aws-auth</code> ConfigMap</h2>
+  <p class="sub">IAM principals mapped into Kubernetes via <code>kube-system/aws-auth</code>.
+    <span class="grp master">system:masters</span> is cluster-admin.</p>
+  {% call table_wrap(mappings | length, collapse_after, "IAM principal mappings") %}
+  <table class="dt">
+    <thead><tr><th>Principal ARN</th><th>Type</th><th>Kubernetes username</th><th>Groups</th></tr></thead>
+    <tbody>
+      {% for m in mappings %}
+      <tr>
+        <td>{{ m.arn | arn }}</td>
+        <td>{{ m.kind }}</td>
+        <td><code>{{ m.username }}</code></td>
+        <td>{% for g in m.groups %}{{ g | group_chip }}{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endcall %}
+</section>
+{% endif %}
+
+{% if eks and eks.access_entries %}
+<section id="entries">
+  <h2>EKS access entries</h2>
+  <p class="sub">Principals granted access through the EKS access-entry API. These are evaluated
+    <em>before</em> the aws-auth ConfigMap and are invisible to Kubernetes RBAC alone.</p>
+  {% call table_wrap(eks.access_entries | length, collapse_after, "access entries") %}
+  <table class="dt">
+    <thead><tr><th>Principal ARN</th><th>Type</th><th>Username</th><th>Groups</th><th>Access policies</th></tr></thead>
+    <tbody>
+      {% for e in eks.access_entries %}
+      <tr>
+        <td>{{ e.principal_arn | arn }}</td>
+        <td>{{ e.entry_type }}</td>
+        <td><code>{{ e.username }}</code></td>
+        <td>{% for g in e.kubernetes_groups %}{{ g | group_chip }}{% endfor %}</td>
+        <td>
+          {% for p in e.policies %}
+          <span class="grp{% if p.is_cluster_admin %} master{% endif %}">{{ p.name }} ({{ p.scope_type }})</span>
+          {% else %}<span class="note">none</span>{% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endcall %}
+</section>
+{% endif %}
+
+<section id="rbac">
+  <h2>Kubernetes RBAC overview</h2>
+  <p class="sub">Inventory and the operator-defined bindings discovered in the cluster.</p>
+  <div class="tablewrap">
+    <table class="dt">
+      <thead><tr><th>Object</th><th>Count</th></tr></thead>
+      <tbody>
+        {% for label, value in inventory_rows %}
+        <tr><td>{{ label }}</td><td>{{ value }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Who can reach <code>cluster-admin</code></h3>
+  {% if inventory.cluster_admin_paths %}
+  {% call table_wrap(inventory.cluster_admin_paths | length, collapse_after, "cluster-admin paths") %}
+  <table class="dt">
+    <thead><tr><th>Path</th><th>Subject</th><th>Subject type</th></tr></thead>
+    <tbody>
+      {% for path, subject, kind in inventory.cluster_admin_paths %}
+      <tr><td>{{ path }}</td><td><code>{{ subject }}</code></td><td>{{ kind }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endcall %}
+  {% else %}
+  <p class="note">No binding grants cluster-admin or an equivalent wildcard ClusterRole.</p>
+  {% endif %}
+
+  <h3>Custom (operator-defined) ClusterRoleBindings</h3>
+  {% if inventory.custom_cluster_role_bindings %}
+  {% call table_wrap(inventory.custom_cluster_role_bindings | length, collapse_after, "custom ClusterRoleBindings") %}
+  <table class="dt">
+    <thead><tr><th>Binding</th><th>→ Role</th><th>Subjects</th></tr></thead>
+    <tbody>
+      {% for b in inventory.custom_cluster_role_bindings %}
+      <tr>
+        <td><code>{{ b.name }}</code></td>
+        <td><code>{{ b.role_display }}</code></td>
+        <td>{% for s in b.subjects %}<code>{{ s.display }}</code><br>{% else %}<span class="note">none</span>{% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endcall %}
+  {% else %}
+  <p class="note">Every ClusterRoleBinding in this cluster ships with Kubernetes or EKS.</p>
+  {% endif %}
+</section>
+
+<section id="sa">
+  <h2>ServiceAccount token posture</h2>
+  <p class="sub">Whether pods are needlessly minting Kubernetes API tokens.</p>
+  <div class="tablewrap">
+    <table class="dt">
+      <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+      <tbody>
+        {% for label, value, good in sa_rows %}
+        <tr>
+          <td>{{ label }}</td>
+          <td>{% if good %}<span style="color:#1a6b31;font-weight:700">{{ value }}</span>{% else %}{{ value }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if posture.default_bound %}
+  <h3>Bindings naming the <code>default</code> ServiceAccount</h3>
+  <ul class="plain">{% for item in posture.default_bound %}<li>{{ item }}</li>{% endfor %}</ul>
+  {% endif %}
+</section>
+
+<section id="method">
+  <h2>Methodology &amp; data sources</h2>
+  <p class="sub">Every command executed during this audit, in order. Read-only: nothing was
+    created, updated, patched, or deleted.</p>
+  {% call table_wrap(commands | length, collapse_after, "executed commands") %}
+  <table class="dt">
+    <thead><tr><th>#</th><th>Command</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for c in commands %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><code>{{ c.command }}</code></td>
+        <td>{% if c.ok %}0{% else %}<span style="color:#b42318;font-weight:700">{{ c.exit_code }}</span>{% endif %}</td>
+        <td class="note">{{ c.note }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endcall %}
+
+  <h3>Interpreting this report</h3>
+  <ul class="plain">
+    <li>Severity scale: CRITICAL &gt; HIGH &gt; MEDIUM &gt; LOW &gt; INFORMATIONAL.</li>
+    <li><code>kubectl who-can</code> does not evaluate pod subresources such as
+      <code>pods/exec</code>, so exec rights were read directly from the ClusterRole and Role
+      rules rather than from its output.</li>
+    <li>Findings marked <span class="tag unverified">unverified</span> could not be confirmed
+      against the EKS control-plane API — usually because the AWS CLI was unavailable or the
+      auditing identity lacks <code>eks:DescribeCluster</code>.</li>
+    <li>Roles carrying the <code>kubernetes.io/bootstrapping: rbac-defaults</code> label are
+      upstream Kubernetes defaults and are excluded from operator-defined rules.</li>
+    <li>This report is self-contained: it references no external stylesheet, script, font, or
+      image and renders identically offline.</li>
+  </ul>
+</section>
+
+<footer>
+  {{ report_title }} · eks_rbac_audit {{ version }} ·
+  cluster {{ meta.cluster_name or meta.context }} ·
+  {% if meta.account_id %}AWS account {{ meta.account_id }} · {% endif %}
+  generated {{ generated_at }} · self-contained offline report
+</footer>
+
+</div>
+</body>
+</html>
