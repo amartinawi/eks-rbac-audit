@@ -85,6 +85,54 @@ def test_populated_map_accounts_is_read():
     assert awsauth.map_accounts(cm) == ("444455556666",)
 
 
+def test_map_accounts_is_read_without_pyyaml(monkeypatch):
+    """mapAccounts is a sequence of bare scalars, not of mappings.
+
+    The fallback parser originally assumed every top-level element opened a
+    mapping and produced the string '{}' for each account.
+    """
+    monkeypatch.setattr(awsauth, "yaml", None)
+    cm = _configmap(map_accounts='- "444455556666"\n- 999988887777\n')
+    assert awsauth.map_accounts(cm) == ("444455556666", "999988887777")
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        '- "444455556666"\n',
+        "- 444455556666\n- 999988887777\n",
+        "[]\n",
+        "",
+    ],
+    ids=["quoted", "multiple-unquoted", "empty-inline", "blank"],
+)
+def test_fallback_map_accounts_agrees_with_pyyaml(block, monkeypatch):
+    with_yaml = awsauth.map_accounts(_configmap(map_accounts=block))
+    monkeypatch.setattr(awsauth, "yaml", None)
+    assert awsauth.map_accounts(_configmap(map_accounts=block)) == with_yaml
+
+
+def test_inline_flow_sequence_for_groups(monkeypatch):
+    """`groups: [system:masters]` is valid YAML and appears in real ConfigMaps."""
+    block = (
+        "- groups: [system:masters, system:nodes]\n"
+        "  rolearn: arn:aws:iam::111122223333:role/Multi\n"
+    )
+    with_yaml = awsauth.parse_aws_auth(_configmap(map_roles=block))
+    assert with_yaml[0].groups == ("system:masters", "system:nodes")
+
+    monkeypatch.setattr(awsauth, "yaml", None)
+    assert awsauth.parse_aws_auth(_configmap(map_roles=block)) == with_yaml
+
+
+def test_colon_inside_a_value_is_not_read_as_a_key(monkeypatch):
+    """ARNs and group names are full of colons; only `key: value` is a mapping."""
+    monkeypatch.setattr(awsauth, "yaml", None)
+    mappings = awsauth.parse_aws_auth(_configmap(map_roles=UNQUOTED))
+    assert mappings[0].arn == "arn:aws:iam::111122223333:role/node-role"
+    assert mappings[0].username == "system:node:{{EC2PrivateDNSName}}"
+
+
 def test_missing_configmap_yields_no_mappings():
     assert awsauth.parse_aws_auth(None) == ()
     assert awsauth.parse_aws_auth({}) == ()

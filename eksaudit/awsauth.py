@@ -139,18 +139,24 @@ def _load_yaml(text: Any) -> Any:
 def parse_simple_yaml_sequence(text: str) -> list[Any]:
     """Minimal YAML-sequence parser covering the aws-auth subset.
 
-    Handles a top-level sequence of mappings whose values are scalars, plus a
-    single nested sequence (``groups``). Quoted and unquoted keys and values are
-    both accepted, as are inline empty sequences (``[]``).
+    Handles the three shapes the ConfigMap actually uses:
 
-    This is deliberately narrow: anything outside that shape is not aws-auth
-    data, and guessing at it would be worse than returning nothing.
+    - a sequence of mappings, each with scalar values plus one nested ``groups``
+      sequence — ``mapRoles`` and ``mapUsers``;
+    - a sequence of bare scalars — ``mapAccounts`` is a list of account IDs;
+    - inline flow sequences (``groups: [system:masters]``) and empty ones (``[]``).
+
+    Quoted and unquoted keys and values are both accepted, because a single
+    cluster routinely has one block written in each style.
+
+    Deliberately narrow: anything outside those shapes is not aws-auth data, and
+    guessing at it would be worse than returning nothing.
     """
     stripped_text = text.strip()
     if stripped_text in ("[]", "{}"):
         return []
 
-    items: list[dict[str, Any]] = []
+    items: list[Any] = []
     current: Optional[dict[str, Any]] = None
     pending_list_key: Optional[str] = None
 
@@ -164,12 +170,19 @@ def parse_simple_yaml_sequence(text: str) -> list[Any]:
         is_dash = stripped.startswith("- ") or stripped == "-"
         content = stripped[1:].strip() if is_dash else stripped
 
-        # A dash at column zero starts a new mapping in the top-level sequence.
         if is_dash and indent == 0:
             if current is not None:
                 items.append(current)
-            current = {}
+                current = None
             pending_list_key = None
+
+            # A top-level element with no `key:` is a bare scalar, not a mapping.
+            # mapAccounts is exactly this: a list of account IDs.
+            if content and not _is_mapping_entry(content):
+                items.append(_unquote(content))
+                continue
+
+            current = {}
             if content:
                 pending_list_key = _absorb(current, content)
             continue
@@ -190,9 +203,23 @@ def parse_simple_yaml_sequence(text: str) -> list[Any]:
     return items
 
 
+def _is_mapping_entry(content: str) -> bool:
+    """True when ``content`` opens a ``key: value`` pair rather than a scalar.
+
+    A colon alone is not enough — ``system:masters`` and an ARN both contain
+    colons while being plain scalars. YAML requires the colon to be followed by
+    whitespace or to end the line, which is the distinction used here.
+    """
+    index = content.find(":")
+    if index == -1:
+        return False
+    remainder = content[index + 1:]
+    return remainder == "" or remainder[0].isspace()
+
+
 def _absorb(target: dict[str, Any], content: str) -> Optional[str]:
     """Apply ``key: value`` to ``target``; return the key if it opened a sequence."""
-    if ":" not in content:
+    if not _is_mapping_entry(content):
         return None
     key, _, value = content.partition(":")
     key = _unquote(key.strip())
@@ -202,6 +229,11 @@ def _absorb(target: dict[str, Any], content: str) -> Optional[str]:
         return key
     if value in ("[]", "{}"):
         target[key] = []
+        return None
+    # An inline flow sequence: groups: [system:masters, system:nodes]
+    if value.startswith("[") and value.endswith("]"):
+        inner = value[1:-1].strip()
+        target[key] = [_unquote(part) for part in inner.split(",") if part.strip()] if inner else []
         return None
     target[key] = _unquote(value)
     return None
