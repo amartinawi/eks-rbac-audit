@@ -12,3 +12,6 @@ venv/
 .pytest_cache/
 .coverage
 *.egg-info/
+
+# macOS
+.DS_Store
