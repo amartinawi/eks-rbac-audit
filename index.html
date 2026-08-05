@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EKS RBAC &amp; API Authentication Audit — acme-prod</title>
+<style>/* Self-contained report styling. No external font, image, or stylesheet:
+   the report must render identically with the machine offline. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #1f2328;
+  background: #f6f8fa;
+  line-height: 1.5;
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
+
+/* ---------- hero ---------- */
+header.hero {
+  background: linear-gradient(135deg, #0b2e4f, #1168a3);
+  color: #fff;
+  border-radius: 16px;
+  padding: 28px 30px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+}
+header.hero h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; font-weight: 600; opacity: .9; }
+/* The cluster is what identifies this report; it leads visually over the
+   generic tool name above it. */
+header.hero p.cluster {
+  margin: 2px 0 4px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+header.hero p.lede { margin: 2px 0 0; opacity: .9; font-size: 13.5px; }
+.meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+/* Solid light chips with dark text. Translucent-white-on-gradient looks tidy
+   but leaves the values — the part the reader actually came for — at roughly
+   2:1 contrast, which is unreadable. */
+.meta span {
+  background: rgba(255, 255, 255, .95);
+  color: #33404d;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.meta span.ro { background: #1a7f37; color: #fff; font-weight: 700; }
+header.hero code {
+  background: rgba(11, 46, 79, .09);
+  border-color: rgba(11, 46, 79, .18);
+  color: #0b2e4f;
+  font-weight: 600;
+}
+
+/* ---------- section navigation ---------- */
+nav.toc {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  background: rgba(246, 248, 250, .94);
+  backdrop-filter: blur(6px);
+  border: 1px solid #d9dee3;
+  border-radius: 10px;
+}
+nav.toc a {
+  color: #1168a3;
+  text-decoration: none;
+  font-size: 12.5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+}
+nav.toc a:hover { background: #e8eef5; text-decoration: none; }
+
+/* ---------- KPI tiles ---------- */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.tile {
+  background: #fff;
+  border: 1px solid #d9dee3;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.tile .n { font-size: 26px; font-weight: 800; color: #0b2e4f; line-height: 1.15; }
+.tile .l {
+  font-size: 11px;
+  color: #5b6470;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ---------- severity bar ---------- */
+.sevbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 4px; }
+.sevbar .s { flex: 1; min-width: 110px; color: #fff; border-radius: 10px; padding: 10px 12px; }
+.sevbar .s .v { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.sevbar .s .k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .93; }
+
+/* ---------- sections ---------- */
+section {
+  background: #fff;
+  border: 1px solid #d9dee3;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin: 18px 0;
+  scroll-margin-top: 64px;
+}
+section h2 { margin: 0 0 4px; font-size: 18px; color: #0b2e4f; }
+section h3 { margin: 20px 0 6px; font-size: 14.5px; color: #33404d; }
+section .sub { color: #5b6470; font-size: 13px; margin: 0 0 14px; }
+
+/* ---------- finding cards ---------- */
+.card {
+  border: 1px solid #e3e8ee;
+  border-radius: 12px;
+  background: #fbfcfd;
+  padding: 16px 18px;
+  margin: 14px 0;
+  border-left-width: 5px;
+  border-left-style: solid;
+}
+.card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.card-head h3 { margin: 0; font-size: 15.5px; flex: 1 1 320px; }
+.badge {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #5b6470;
+  background: #eef2f6;
+  border: 1px solid #d9dee3;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.tag.unverified { color: #8a6100; background: #fff5e0; border-color: #f0d9a5; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.lbl {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #6b7480;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+ul.ev, ul.rem { margin: 0; padding-left: 18px; }
+ul.ev li, ul.rem li { font-size: 13px; margin: 5px 0; line-height: 1.45; overflow-wrap: anywhere; }
+ul.rem li { color: #1a6b31; }
+.impact {
+  margin-top: 12px;
+  background: #fff8e6;
+  border: 1px solid #f1d999;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12.8px;
+  color: #5c4400;
+}
+.impact .lbl { display: inline; color: #8a6100; margin-right: 6px; }
+
+/* ---------- tables ---------- */
+.tablewrap { overflow-x: auto; }
+table.dt { border-collapse: collapse; width: 100%; font-size: 12.6px; margin-top: 6px; }
+table.dt th, table.dt td {
+  text-align: left;
+  border: 1px solid #e3e8ee;
+  padding: 7px 9px;
+  vertical-align: top;
+}
+table.dt th { background: #eef2f6; color: #33404d; font-weight: 700; white-space: nowrap; }
+table.dt tr:nth-child(even) td { background: #fafbfc; }
+
+details.collapsible > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: #1168a3;
+  padding: 6px 0;
+  user-select: none;
+}
+details.collapsible > summary:hover { text-decoration: underline; }
+
+/* ---------- inline chips and code ---------- */
+.grp {
+  display: inline-block;
+  background: #eef2f6;
+  border: 1px solid #d3dae2;
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-size: 11.5px;
+  margin: 1px;
+  white-space: nowrap;
+}
+.grp.master { background: #fdecec; border-color: #f3b4b4; color: #b42318; font-weight: 700; }
+.grp.node { background: #eef6ff; border-color: #bcd8f5; color: #14507f; }
+
+code, .mono {
+  background: #eef2f6;
+  border: 1px solid #e0e6ec;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  overflow-wrap: anywhere;
+}
+/* The account id repeats on every ARN; de-emphasising it lets the eye land on
+   the principal name, which is the part that differs row to row. */
+.arn .dim { color: #98a2ad; }
+.arn .name { font-weight: 700; color: #1f2328; }
+
+.note { font-size: 12.5px; color: #5b6470; }
+ul.plain { margin: 6px 0 0; padding-left: 18px; }
+ul.plain li { font-size: 13px; margin: 4px 0; }
+ul.positives li { color: #1a6b31; }
+ul.warnings li { color: #8a6100; }
+
+footer { margin-top: 26px; color: #5b6470; font-size: 12px; text-align: center; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .tiles { grid-template-columns: repeat(3, 1fr); }
+  .grid2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .wrap { padding: 18px 14px 60px; }
+}
+
+/* ---------- print ---------- */
+@media print {
+  body { background: #fff; }
+  nav.toc { display: none; }
+  section, .card { break-inside: avoid; box-shadow: none; }
+  header.hero { background: #0b2e4f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .badge, .sevbar .s { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  details.collapsible { display: block; }
+  details.collapsible > summary { display: none; }
+}
+</style>
+</head>
+<body>
+<div style="max-width:1180px;margin:18px auto -6px;padding:12px 16px;background:#fff8e6;
+border:1px solid #f1d999;border-radius:10px;color:#5c4400;font:14px/1.5 -apple-system,
+BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<strong>Demo report.</strong> Generated from a fictional cluster to show what
+<a href="https://github.com/amartinawi/eks-rbac-audit" style="color:#1168a3">eks-rbac-audit</a>
+produces. Every cluster, principal, and AWS account here is invented; no real cluster was audited.
+Regenerate it with <code style="background:#fdf3d8;padding:1px 5px;border-radius:4px">python3 examples/generate_demo.py</code>.
+</div>
+<div class="wrap">
+
+<header class="hero">
+  <h1>EKS RBAC &amp; API Authentication Audit</h1>
+  <p class="cluster">acme-prod</p>
+  <p class="lede">
+    Kubernetes role-based access control and EKS identity mapping review
+  </p>
+  <div class="meta">
+    <span>Cluster: <code>acme-prod</code></span>
+    <span>Context: <code>arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></span>
+    <span>AWS account: <code>111122223333</code></span>
+    <span>Region: <code>eu-west-1</code></span>
+    <span>Server: <code>v1.33.13-eks-8f14419</code></span>
+    <span>Auth mode: <code>API_AND_CONFIG_MAP</code></span>
+    <span>Generated: 2026-08-05 09:30 UTC</span>
+    <span class="ro">Mode: read-only</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#summary">Executive summary</a>
+  <a href="#findings">Findings</a>
+<a href="#auth">aws-auth principals</a><a href="#entries">Access entries</a>  <a href="#rbac">RBAC inventory</a>
+  <a href="#sa">ServiceAccount posture</a>
+  <a href="#method">Methodology</a>
+</nav>
+
+<div class="tiles">
+  <div class="tile">
+    <div class="n">13</div>
+    <div class="l">IAM principals mapped</div>
+  </div>
+  <div class="tile">
+    <div class="n" style="color:#b42318">9</div>
+    <div class="l">cluster-admin principals</div>
+  </div>
+  <div class="tile">
+    <div class="n">9</div>
+    <div class="l">custom ClusterRoles</div>
+  </div>
+  <div class="tile">
+    <div class="n">17</div>
+    <div class="l">total findings</div>
+  </div>
+  <div class="tile">
+    <div class="n">11</div>
+    <div class="l">namespaces</div>
+  </div>
+  <div class="tile">
+    <div class="n">23</div>
+    <div class="l">service accounts</div>
+  </div>
+</div>
+
+<div class="sevbar">
+  <div class="s" style="background:#b42318">
+    <div class="v">2</div>
+    <div class="k">CRITICAL</div>
+  </div>
+  <div class="s" style="background:#dc6803">
+    <div class="v">7</div>
+    <div class="k">HIGH</div>
+  </div>
+  <div class="s" style="background:#c3920a">
+    <div class="v">4</div>
+    <div class="k">MEDIUM</div>
+  </div>
+  <div class="s" style="background:#3a7afe">
+    <div class="v">2</div>
+    <div class="k">LOW</div>
+  </div>
+  <div class="s" style="background:#5b6470">
+    <div class="v">2</div>
+    <div class="k">INFORMATIONAL</div>
+  </div>
+</div>
+
+<section id="summary">
+  <h2>Executive summary</h2>
+  <p class="sub">Severity-weighted findings across EKS authentication and Kubernetes RBAC.</p>
+  <p>The most serious issue is ClusterRole “platform-readonly” is named read-only but grants cluster-wide Secret read and pod exec. Reading Secrets exposes ServiceAccount tokens, database and application credentials, and TLS private keys; the ability to exec into a pod turns any of those into code execution inside the cluster. Together they are a direct path to full cluster compromise, which is not what the people who were granted this role believe they hold. Also outstanding: ClusterRole “incident-debug” combines Secret read with pod exec (admin-equivalent); Operator-defined roles grant privilege-escalation verbs; Operator-defined roles can mint credentials, and 9 further issues. 13 IAM principals are mapped into the cluster through aws-auth, 7 of them with cluster-admin. The cluster&#39;s authenticationMode is API_AND_CONFIG_MAP. Findings by severity: 2 critical, 7 high, 4 medium, 2 low, 2 informational.</p>
+
+  <h3>What is working well</h3>
+  <ul class="plain positives">
+<li>Anonymous access is limited to the upstream-default system:public-info-viewer binding (health, version, and API discovery only).</li>  </ul>
+
+</section>
+
+<section id="findings">
+  <h2>Findings</h2>
+  <p class="sub">Sorted by severity. Each lists the evidence read from the cluster, the business
+    impact, and the recommended remediation.</p>
+  <div class="card" style="border-left-color:#b42318">
+    <div class="card-head">
+      <span class="badge" style="background:#b42318">CRITICAL</span>
+      <h3>ClusterRole “platform-readonly” is named read-only but grants cluster-wide Secret read and pod exec</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRole platform-readonly rule: apiGroups: [*] resources: [deployments, pods, pods/log, configmaps, secrets, services, namespaces, horizontalpodautoscalers] verbs: [get, list, watch]</li><li>ClusterRole platform-readonly rule: apiGroups: [*] resources: [pods/exec] verbs: [create]</li><li>Bound subjects: Group:platform-readonly</li><li>IAM principals reaching it via aws-auth: acme-billing-export-lambda, acme-oncall-engineer, qa-analyst</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Remove secrets and pods/exec from ClusterRole platform-readonly.</li><li>Replace it with a namespace-scoped Role listing only the resources the consumers genuinely need.</li><li>Rotate every Secret that was readable while this role was in effect.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Reading Secrets exposes ServiceAccount tokens, database and application credentials, and TLS private keys; the ability to exec into a pod turns any of those into code execution inside the cluster. Together they are a direct path to full cluster compromise, which is not what the people who were granted this role believe they hold.</div>
+  </div>
+  <div class="card" style="border-left-color:#b42318">
+    <div class="card-head">
+      <span class="badge" style="background:#b42318">CRITICAL</span>
+      <h3>ClusterRole “incident-debug” combines Secret read with pod exec (admin-equivalent)</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRole incident-debug rule: apiGroups: [core] resources: [secrets] verbs: [get, list]</li><li>ClusterRole incident-debug rule: apiGroups: [core] resources: [pods/exec, pods/attach] verbs: [create]</li><li>Bound subjects: Group:sre, ServiceAccount:oncall-bot (observability)</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Remove secrets and pods/exec from ClusterRole incident-debug.</li><li>Replace it with a namespace-scoped Role listing only the resources the consumers genuinely need.</li><li>Rotate every Secret that was readable while this role was in effect.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Reading Secrets exposes ServiceAccount tokens, database and application credentials, and TLS private keys; the ability to exec into a pod turns any of those into code execution inside the cluster. Together they are a direct path to full cluster compromise, which is not what the people who were granted this role believe they hold.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>Operator-defined roles grant privilege-escalation verbs</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRole namespace-provisioner grants escalate, bind — bound to: ServiceAccount:provisioner (platform)</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Remove escalate, bind, and impersonate from these roles.</li><li>Where binding really is required (a controller reconciling RBAC), scope the rule with resourceNames to the specific roles it manages.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>escalate and bind let a principal award itself permissions it does not hold, defeating the RBAC ceiling entirely. impersonate lets it act as any other user, group, or ServiceAccount, including cluster admins — and the audit log records the impersonated identity, not the real one.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>Operator-defined roles can mint credentials</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRole workload-identity-broker can create serviceaccounts/token, certificatesigningrequests — bound to: ServiceAccount:identity-broker (platform)</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Remove create on serviceaccounts/token and certificatesigningrequests.</li><li>If token minting is genuinely needed, scope the rule with resourceNames to the specific ServiceAccounts involved.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Creating a ServiceAccount token yields a working credential for that account, and an approved CertificateSigningRequest yields a client certificate the API server trusts. Either lets a principal act as an identity it was never granted.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>3 automation principals hold permanent cluster-admin</h3>
+      <span class="tag">eks-auth</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>arn:aws:iam::111122223333:role/acme-ci-deploy-role (Kubernetes username “ci-deploy”) → system:masters</li><li>arn:aws:iam::111122223333:role/acme-jenkins-runner (Kubernetes username “jenkins-runner”) → system:masters</li><li>arn:aws:iam::111122223333:user/build-bot (Kubernetes username “build-bot”) → system:masters</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Replace long-lived credentials with short-lived, workload-specific identity — IRSA for in-cluster workloads, or a role assumed via an OIDC-federated CI token for pipelines.</li><li>Scope automation to the namespaces it deploys into with a dedicated Role; never system:masters.</li><li>Rotate the access keys behind these principals and review their CloudTrail and control-plane audit history for unexpected use.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>CI runners, deployment pipelines, and repository credentials with standing system:masters turn a single leaked key or a compromised build into total cluster takeover. These credentials typically live in CI variables, are readable by everyone who can edit a pipeline, and are rarely rotated.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>3 IAM users hold cluster-admin through non-expiring access keys</h3>
+      <span class="tag">eks-auth</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>arn:aws:iam::111122223333:user/a.rivera (Kubernetes username “a.rivera”) → system:masters</li><li>arn:aws:iam::111122223333:user/m.chen (Kubernetes username “m.chen”) → system:masters</li><li>arn:aws:iam::111122223333:user/s.patel (Kubernetes username “s.patel”) → system:masters</li><li>IAM users authenticate with a static access-key pair. Unlike an assumed role, that credential has no session lifetime and no MFA requirement at the point of use.</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Move these people to federated access: an IAM role assumed through SSO with MFA, mapped into the cluster in place of the user.</li><li>Delete the IAM users&#39; access keys once the role path is in use.</li><li>If a user must remain, require MFA on the key&#39;s permissions with an aws:MultiFactorAuthPresent condition.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>A leaked or committed access key belonging to any of these users grants permanent, unconditional cluster-admin. There is no session expiry to limit the window and no MFA challenge at the point the key is used.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>2 EKS access entries grant cluster-admin</h3>
+      <span class="tag">eks-auth</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>arn:aws:iam::111122223333:role/acme-break-glass → AmazonEKSClusterAdminPolicy (STANDARD)</li><li>arn:aws:iam::111122223333:role/acme-terraform-apply → AmazonEKSClusterAdminPolicy (STANDARD)</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Confirm each principal still requires cluster admin.</li><li>Prefer AmazonEKSEditPolicy or AmazonEKSViewPolicy with a namespace-scoped access scope where the full admin policy is not required.</li><li>Manage access entries in version-controlled infrastructure code so every change is reviewed.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Access entries are evaluated by the EKS control plane before the aws-auth ConfigMap, so these grants are invisible to anyone auditing only Kubernetes RBAC or only the ConfigMap. They are full cluster admin all the same.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>1 custom wildcard ClusterRole grants unrestricted API access</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRole service-mesh-operator grants * on * in * — bound to: ServiceAccount:mesh-operator (mesh)</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Enumerate the apiGroups, resources, and verbs the consumers actually use and replace the wildcards with that list.</li><li>If the intent really is cluster-admin, bind to cluster-admin instead so the grant is visible in every audit.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>A wildcard ClusterRole is cluster-admin under another name. It bypasses every least-privilege boundary and will silently absorb any new API resource added by a future CRD or Kubernetes upgrade.</div>
+  </div>
+  <div class="card" style="border-left-color:#dc6803">
+    <div class="card-head">
+      <span class="badge" style="background:#dc6803">HIGH</span>
+      <h3>The default ServiceAccount is bound to 1 Role or ClusterRole</h3>
+      <span class="tag">serviceaccount</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRoleBinding checkout-metrics binds ServiceAccount default (checkout) to ClusterRole:metrics-reader</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Remove the default ServiceAccount from these bindings.</li><li>Create a dedicated, least-privilege ServiceAccount for each workload that needs API access and reference it explicitly in the pod spec.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Every pod in the namespace that does not name a ServiceAccount silently inherits these permissions, including pods deployed later by anyone with namespace write access.</div>
+  </div>
+  <div class="card" style="border-left-color:#c3920a">
+    <div class="card-head">
+      <span class="badge" style="background:#c3920a">MEDIUM</span>
+      <h3>Broad standing cluster-admin — 9 principals</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>IAM users mapped to system:masters: a.rivera, m.chen, s.patel, build-bot</li><li>IAM roles mapped to system:masters: acme-platform-engineer, acme-ci-deploy-role, acme-jenkins-runner</li><li>EKS access entries granting cluster admin: acme-terraform-apply, acme-break-glass</li><li>cluster-admin is reachable through: ClusterRoleBinding cluster-admin → ClusterRole cluster-admin, ClusterRoleBinding eks:addon-cluster-admin → ClusterRole cluster-admin, ClusterRoleBinding service-mesh-operator → ClusterRole service-mesh-operator</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Reduce standing admins to the people who genuinely need continuous access.</li><li>Move the rest behind just-in-time elevation or a break-glass role with alerting.</li><li>Require SSO with MFA for every admin path and prefer role assumption over long-lived IAM users.</li><li>Schedule periodic access reviews against this report.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>A large permanent admin set widens the blast radius of any single credential compromise and makes insider or lateral movement harder to distinguish from normal operation. There is no just-in-time or break-glass control at the Kubernetes layer.</div>
+  </div>
+  <div class="card" style="border-left-color:#c3920a">
+    <div class="card-head">
+      <span class="badge" style="background:#c3920a">MEDIUM</span>
+      <h3>Cluster access is sourced from two places at once</h3>
+      <span class="tag">eks-auth</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>Cluster authenticationMode is API_AND_CONFIG_MAP: both EKS access entries and the aws-auth ConfigMap are evaluated, with access entries taking precedence.</li><li>The ConfigMap maps 13 principals; 4 access entries exist.</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Create an access entry for every principal still served by the ConfigMap, using the same username and groups.</li><li>Switch authenticationMode to API and delete the ConfigMap. Note this is a one-way change — API_AND_CONFIG_MAP cannot be restored afterwards.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>ConfigMap-based authentication has no per-principal audit trail, cannot express session policies or IAM condition keys, and a single bad apply can lock every administrator out of the cluster irreversibly.</div>
+  </div>
+  <div class="card" style="border-left-color:#c3920a">
+    <div class="card-head">
+      <span class="badge" style="background:#c3920a">MEDIUM</span>
+      <h3>Control-plane logging is incomplete — audit, authenticator disabled</h3>
+      <span class="tag">eks-auth</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>Enabled log types: api, scheduler.</li><li>Missing: audit, authenticator.</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Enable the audit and authenticator control-plane log types on the cluster.</li><li>Ship them to a CloudWatch log group with a retention period that matches your incident-response window.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Without the audit log there is no record of who read Secrets or exec&#39;d into a pod, and without the authenticator log there is no record of which IAM principal mapped to which Kubernetes identity. An incident involving any finding in this report would not be reconstructable.</div>
+  </div>
+  <div class="card" style="border-left-color:#c3920a">
+    <div class="card-head">
+      <span class="badge" style="background:#c3920a">MEDIUM</span>
+      <h3>The Kubernetes API endpoint is reachable from the entire internet</h3>
+      <span class="tag">eks-auth</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>endpointPublicAccess is enabled with publicAccessCidrs 0.0.0.0/0.</li><li>Every authentication weakness in this report is therefore reachable from any network.</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Restrict publicAccessCidrs to the office and CI egress ranges that need it.</li><li>Where possible enable private endpoint access and reach the API through a VPN, Direct Connect, or an SSM tunnel.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>A public endpoint removes the network as a defence layer: credential stuffing, leaked kubeconfig reuse, and anonymous-access misconfiguration all become internet-exposed rather than requiring a foothold in the VPC.</div>
+  </div>
+  <div class="card" style="border-left-color:#3a7afe">
+    <div class="card-head">
+      <span class="badge" style="background:#3a7afe">LOW</span>
+      <h3>ServiceAccount tokens are auto-mounted on almost every workload</h3>
+      <span class="tag">serviceaccount</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>23 ServiceAccounts; only 2 explicitly set automountServiceAccountToken: false.</li><li>9 of them are the per-namespace default ServiceAccounts.</li><li>21 therefore mount an API token by default.</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Set automountServiceAccountToken: false on ServiceAccounts and pods that do not call the Kubernetes API.</li><li>Give the workloads that do call it namespace-scoped, least-privilege ServiceAccounts.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Every pod without an explicit opt-out mounts a usable API token at /var/run/secrets/kubernetes.io/serviceaccount. A compromised container hands the attacker that token even when the workload never calls the API.</div>
+  </div>
+  <div class="card" style="border-left-color:#3a7afe">
+    <div class="card-head">
+      <span class="badge" style="background:#3a7afe">LOW</span>
+      <h3>Controller and add-on ServiceAccounts retain Secret read — verify least privilege</h3>
+      <span class="tag">serviceaccount</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>cert-manager (cert-manager) via ClusterRole:cert-manager-controller</li><li>efs-csi-controller (kube-system) via ClusterRole:efs-csi-provisioner</li><li>ingress-controller (ingress) via ClusterRole:ingress-controller</li><li>ingress-controller (ingress) via Role:ingress-controller</li><li>mesh-operator (mesh) via ClusterRole:service-mesh-operator</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Confirm each is scoped to the minimum namespaces and resourceNames it requires.</li><li>Prefer projected, bound ServiceAccount tokens over long-lived Secret-backed ones.</li><li>Re-review during each platform upgrade.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>CSI drivers, ingress controllers, and certificate managers legitimately need some Secret access for TLS material and credentials. Each one is nonetheless a credential-exfiltration target if its workload is compromised.</div>
+  </div>
+  <div class="card" style="border-left-color:#5b6470">
+    <div class="card-head">
+      <span class="badge" style="background:#5b6470">INFORMATIONAL</span>
+      <h3>Audit was performed read-only from the current caller context</h3>
+      <span class="tag">context</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>Audited context: arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</li><li>Kubernetes server version: v1.33.13-eks-8f14419</li><li>kubectl auth can-i --list returned 1 rule for the auditing identity.</li><li>Caveat reported by the API server: Warning: the list may be incomplete: webhook authorizer does not support user rule resolution</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>Re-run with an identity holding cluster-wide read access if any collection warning is present.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>Findings reflect what this identity could read. A caller without permission to list an API group would not see roles defined there; the warnings section names any such gap.</div>
+  </div>
+  <div class="card" style="border-left-color:#5b6470">
+    <div class="card-head">
+      <span class="badge" style="background:#5b6470">INFORMATIONAL</span>
+      <h3>Anonymous access limited to the upstream Kubernetes default</h3>
+      <span class="tag">rbac</span>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="lbl">Evidence</div>
+        <ul class="ev"><li>ClusterRoleBinding system:public-info-viewer → ClusterRole:system:public-info-viewer</li></ul>
+      </div>
+      <div>
+        <div class="lbl">Remediation</div>
+        <ul class="rem"><li>No action required. Remove the binding only if policy forbids unauthenticated API discovery entirely.</li></ul>
+      </div>
+    </div>
+    <div class="impact"><span class="lbl">Impact</span>system:public-info-viewer is the Kubernetes default: unauthenticated clients may only GET /healthz, /version and basic API discovery. Low risk.</div>
+  </div>
+</section>
+
+<section id="auth">
+  <h2>EKS authentication — <code>aws-auth</code> ConfigMap</h2>
+  <p class="sub">IAM principals mapped into Kubernetes via <code>kube-system/aws-auth</code>.
+    <span class="grp master">system:masters</span> is cluster-admin.</p>
+<div class="tablewrap">  <table class="dt">
+    <thead><tr><th>Principal ARN</th><th>Type</th><th>Kubernetes username</th><th>Groups</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-node-group-web</span></span></td>
+        <td>IAM role</td>
+        <td><code>system:node:{{EC2PrivateDNSName}}</code></td>
+        <td><span class="grp node">system:bootstrappers</span><span class="grp node">system:nodes</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-node-group-batch</span></span></td>
+        <td>IAM role</td>
+        <td><code>system:node:{{EC2PrivateDNSName}}</code></td>
+        <td><span class="grp node">system:bootstrappers</span><span class="grp node">system:nodes</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-node-group-ingest</span></span></td>
+        <td>IAM role</td>
+        <td><code>system:node:{{EC2PrivateDNSName}}</code></td>
+        <td><span class="grp node">system:bootstrappers</span><span class="grp node">system:nodes</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-platform-engineer</span></span></td>
+        <td>IAM role</td>
+        <td><code>platform-engineer</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-ci-deploy-role</span></span></td>
+        <td>IAM role</td>
+        <td><code>ci-deploy</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-jenkins-runner</span></span></td>
+        <td>IAM role</td>
+        <td><code>jenkins-runner</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-billing-export-lambda</span></span></td>
+        <td>IAM role</td>
+        <td><code>billing-export</code></td>
+        <td><span class="grp">platform-readonly</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-oncall-engineer</span></span></td>
+        <td>IAM role</td>
+        <td><code>oncall</code></td>
+        <td><span class="grp">platform-readonly</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:user/</span><span class="name">a.rivera</span></span></td>
+        <td>IAM user</td>
+        <td><code>a.rivera</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:user/</span><span class="name">m.chen</span></span></td>
+        <td>IAM user</td>
+        <td><code>m.chen</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:user/</span><span class="name">s.patel</span></span></td>
+        <td>IAM user</td>
+        <td><code>s.patel</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:user/</span><span class="name">build-bot</span></span></td>
+        <td>IAM user</td>
+        <td><code>build-bot</code></td>
+        <td><span class="grp master">system:masters</span></td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:user/</span><span class="name">qa-analyst</span></span></td>
+        <td>IAM user</td>
+        <td><code>qa-analyst</code></td>
+        <td><span class="grp">platform-readonly</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<section id="entries">
+  <h2>EKS access entries</h2>
+  <p class="sub">Principals granted access through the EKS access-entry API. These are evaluated
+    <em>before</em> the aws-auth ConfigMap and are invisible to Kubernetes RBAC alone.</p>
+<div class="tablewrap">  <table class="dt">
+    <thead><tr><th>Principal ARN</th><th>Type</th><th>Username</th><th>Groups</th><th>Access policies</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-terraform-apply</span></span></td>
+        <td>STANDARD</td>
+        <td><code>terraform</code></td>
+        <td></td>
+        <td>
+          <span class="grp master">AmazonEKSClusterAdminPolicy (cluster)</span>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-break-glass</span></span></td>
+        <td>STANDARD</td>
+        <td><code>break-glass</code></td>
+        <td></td>
+        <td>
+          <span class="grp master">AmazonEKSClusterAdminPolicy (cluster)</span>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-developer</span></span></td>
+        <td>STANDARD</td>
+        <td><code>developer</code></td>
+        <td></td>
+        <td>
+          <span class="grp">AmazonEKSEditPolicy (namespace)</span>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="mono arn"><span class="dim">arn:aws:iam::111122223333</span><span class="dim">:role/</span><span class="name">acme-node-group-web</span></span></td>
+        <td>EC2_LINUX</td>
+        <td><code>system:node:{{EC2PrivateDNSName}}</code></td>
+        <td><span class="grp node">system:bootstrappers</span><span class="grp node">system:nodes</span></td>
+        <td>
+<span class="note">none</span>        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<section id="rbac">
+  <h2>Kubernetes RBAC overview</h2>
+  <p class="sub">Inventory and the operator-defined bindings discovered in the cluster.</p>
+  <div class="tablewrap">
+    <table class="dt">
+      <thead><tr><th>Object</th><th>Count</th></tr></thead>
+      <tbody>
+        <tr><td>Namespaces</td><td>11</td></tr>
+        <tr><td>ClusterRoles / ClusterRoleBindings</td><td>15 / 12</td></tr>
+        <tr><td>Roles / RoleBindings (namespaced)</td><td>3 / 2</td></tr>
+        <tr><td>ServiceAccounts</td><td>23</td></tr>
+        <tr><td>Custom (operator-defined) ClusterRoles / ClusterRoleBindings</td><td>9 / 9</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Who can reach <code>cluster-admin</code></h3>
+<div class="tablewrap">  <table class="dt">
+    <thead><tr><th>Path</th><th>Subject</th><th>Subject type</th></tr></thead>
+    <tbody>
+      <tr><td>ClusterRoleBinding cluster-admin → ClusterRole cluster-admin</td><td><code>Group:system:masters</code></td><td>Group</td></tr>
+      <tr><td>ClusterRoleBinding eks:addon-cluster-admin → ClusterRole cluster-admin</td><td><code>User:eks:addon-manager</code></td><td>User</td></tr>
+      <tr><td>ClusterRoleBinding service-mesh-operator → ClusterRole service-mesh-operator</td><td><code>ServiceAccount:mesh-operator (mesh)</code></td><td>ServiceAccount</td></tr>
+    </tbody>
+  </table>
+</div>
+
+  <h3>Custom (operator-defined) ClusterRoleBindings</h3>
+<div class="tablewrap">  <table class="dt">
+    <thead><tr><th>Binding</th><th>→ Role</th><th>Subjects</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>cert-manager-controller</code></td>
+        <td><code>ClusterRole:cert-manager-controller</code></td>
+        <td><code>ServiceAccount:cert-manager (cert-manager)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>checkout-metrics</code></td>
+        <td><code>ClusterRole:metrics-reader</code></td>
+        <td><code>ServiceAccount:default (checkout)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>efs-csi-provisioner</code></td>
+        <td><code>ClusterRole:efs-csi-provisioner</code></td>
+        <td><code>ServiceAccount:efs-csi-controller (kube-system)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>incident-debug</code></td>
+        <td><code>ClusterRole:incident-debug</code></td>
+        <td><code>Group:sre</code><br><code>ServiceAccount:oncall-bot (observability)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>ingress-controller</code></td>
+        <td><code>ClusterRole:ingress-controller</code></td>
+        <td><code>ServiceAccount:ingress-controller (ingress)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>namespace-provisioner</code></td>
+        <td><code>ClusterRole:namespace-provisioner</code></td>
+        <td><code>ServiceAccount:provisioner (platform)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>platform-readonly</code></td>
+        <td><code>ClusterRole:platform-readonly</code></td>
+        <td><code>Group:platform-readonly</code><br></td>
+      </tr>
+      <tr>
+        <td><code>service-mesh-operator</code></td>
+        <td><code>ClusterRole:service-mesh-operator</code></td>
+        <td><code>ServiceAccount:mesh-operator (mesh)</code><br></td>
+      </tr>
+      <tr>
+        <td><code>workload-identity-broker</code></td>
+        <td><code>ClusterRole:workload-identity-broker</code></td>
+        <td><code>ServiceAccount:identity-broker (platform)</code><br></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<section id="sa">
+  <h2>ServiceAccount token posture</h2>
+  <p class="sub">Whether pods are needlessly minting Kubernetes API tokens.</p>
+  <div class="tablewrap">
+    <table class="dt">
+      <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Total ServiceAccounts</td>
+          <td>23</td>
+        </tr>
+        <tr>
+          <td>Explicitly disable token automount</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td>Implicitly mount a token (Kubernetes default)</td>
+          <td>21</td>
+        </tr>
+        <tr>
+          <td>Per-namespace default ServiceAccounts</td>
+          <td>9</td>
+        </tr>
+        <tr>
+          <td>default ServiceAccounts bound to a Role or ClusterRole</td>
+          <td>1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Bindings naming the <code>default</code> ServiceAccount</h3>
+  <ul class="plain"><li>ClusterRoleBinding checkout-metrics binds ServiceAccount default (checkout) to ClusterRole:metrics-reader</li></ul>
+</section>
+
+<section id="method">
+  <h2>Methodology &amp; data sources</h2>
+  <p class="sub">Every command executed during this audit, in order. Read-only: nothing was
+    created, updated, patched, or deleted.</p>
+<div class="tablewrap">  <table class="dt">
+    <thead><tr><th>#</th><th>Command</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><code>kubectl version --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><code>kubectl cluster-info --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><code>kubectl get cm aws-auth -n kube-system -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><code>kubectl get clusterrolebindings -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><code>kubectl get clusterroles -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><code>kubectl get rolebindings --all-namespaces -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><code>kubectl get roles --all-namespaces -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td><code>kubectl get serviceaccounts --all-namespaces -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td><code>kubectl get namespaces -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td><code>kubectl auth can-i --list --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td><code>kubectl rbac-lookup --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td><code>kubectl who-can &#39;*&#39; &#39;*&#39; --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td><code>kubectl who-can get secrets --all-namespaces --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>14</td>
+        <td><code>kubectl who-can create pods --all-namespaces --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>15</td>
+        <td><code>kubectl who-can create pods/exec --all-namespaces --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>16</td>
+        <td><code>kubectl who-can create certificatesigningrequests --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>17</td>
+        <td><code>kubectl config view --minify -o json --context arn:aws:eks:eu-west-1:111122223333:cluster/acme-prod</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>18</td>
+        <td><code>aws eks describe-cluster --name acme-prod --output json --region eu-west-1</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>19</td>
+        <td><code>aws eks list-access-entries --cluster-name acme-prod --output json --region eu-west-1</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>20</td>
+        <td><code>aws eks describe-access-entry --cluster-name acme-prod --principal-arn arn:aws:iam::111122223333:role/acme-terraform-apply --output json --region eu-west-1</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>21</td>
+        <td><code>aws eks describe-access-entry --cluster-name acme-prod --principal-arn arn:aws:iam::111122223333:role/acme-break-glass --output json --region eu-west-1</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>22</td>
+        <td><code>aws eks describe-access-entry --cluster-name acme-prod --principal-arn arn:aws:iam::111122223333:role/acme-developer --output json --region eu-west-1</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+      <tr>
+        <td>23</td>
+        <td><code>aws eks describe-access-entry --cluster-name acme-prod --principal-arn arn:aws:iam::111122223333:role/acme-node-group-web --output json --region eu-west-1</code></td>
+        <td>0</td>
+        <td class="note"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+  <h3>Interpreting this report</h3>
+  <ul class="plain">
+    <li>Severity scale: CRITICAL &gt; HIGH &gt; MEDIUM &gt; LOW &gt; INFORMATIONAL.</li>
+    <li><code>kubectl who-can</code> does not evaluate pod subresources such as
+      <code>pods/exec</code>, so exec rights were read directly from the ClusterRole and Role
+      rules rather than from its output.</li>
+    <li>Findings marked <span class="tag unverified">unverified</span> could not be confirmed
+      against the EKS control-plane API — usually because the AWS CLI was unavailable or the
+      auditing identity lacks <code>eks:DescribeCluster</code>.</li>
+    <li>Roles carrying the <code>kubernetes.io/bootstrapping: rbac-defaults</code> label are
+      upstream Kubernetes defaults and are excluded from operator-defined rules.</li>
+    <li>This report is self-contained: it references no external stylesheet, script, font, or
+      image and renders identically offline.</li>
+  </ul>
+</section>
+
+<footer>
+  EKS RBAC &amp; API Authentication Audit · eks_rbac_audit 1.0.0 ·
+  cluster acme-prod ·
+AWS account 111122223333 ·   generated 2026-08-05 09:30 UTC · self-contained offline report
+</footer>
+
+</div>
+</body>
+</html>
