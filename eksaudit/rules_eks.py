@@ -18,7 +18,14 @@ from .config import (
     REQUIRED_LOG_TYPES,
 )
 from .models import Finding
-from .rules_common import RuleContext, join_names, looks_automation, looks_node_role
+from .rules_common import (
+    RuleContext,
+    agrees,
+    count_noun,
+    join_names,
+    looks_automation,
+    looks_node_role,
+)
 
 
 def machine_principals_with_cluster_admin(ctx: RuleContext) -> list[Finding]:
@@ -42,7 +49,8 @@ def machine_principals_with_cluster_admin(ctx: RuleContext) -> list[Finding]:
         findings.append(
             Finding(
                 severity="HIGH",
-                title=f"{len(machines)} automation principal(s) hold permanent cluster-admin",
+                title=f"{count_noun(len(machines), 'automation principal')} "
+                      f"{agrees(len(machines), 'holds', 'hold')} permanent cluster-admin",
                 evidence=tuple(
                     f"{m.arn} (Kubernetes username “{m.username or m.principal_name}”) "
                     f"→ system:masters"
@@ -73,7 +81,8 @@ def machine_principals_with_cluster_admin(ctx: RuleContext) -> list[Finding]:
             Finding(
                 severity="HIGH",
                 title=(
-                    f"{len(static_users)} IAM user(s) hold cluster-admin through "
+                    f"{count_noun(len(static_users), 'IAM user')} "
+                    f"{agrees(len(static_users), 'holds', 'hold')} cluster-admin through "
                     f"non-expiring access keys"
                 ),
                 evidence=tuple(
@@ -124,7 +133,8 @@ def access_entries_with_cluster_admin(ctx: RuleContext) -> list[Finding]:
     return [
         Finding(
             severity="HIGH",
-            title=f"{len(admins)} EKS access entr(ies) grant cluster-admin",
+            title=f"{count_noun(len(admins), 'EKS access entry', 'EKS access entries')} "
+                  f"{agrees(len(admins), 'grants', 'grant')} cluster-admin",
             evidence=tuple(evidence),
             impact=(
                 "Access entries are evaluated by the EKS control plane before the aws-auth "
@@ -236,7 +246,8 @@ def aws_auth_posture(ctx: RuleContext) -> list[Finding]:
                 title="A stale aws-auth ConfigMap remains after migrating to access entries",
                 evidence=(
                     "Cluster authenticationMode is API — only EKS access entries are evaluated.",
-                    f"The kube-system/aws-auth ConfigMap still lists {principals} principal(s), "
+                    f"The kube-system/aws-auth ConfigMap still lists "
+                    f"{count_noun(principals, 'principal')}, "
                     f"none of which grants any access.",
                 ),
                 impact=(
@@ -260,8 +271,8 @@ def aws_auth_posture(ctx: RuleContext) -> list[Finding]:
         evidence = (
             "Cluster authenticationMode is API_AND_CONFIG_MAP: both EKS access entries and the "
             "aws-auth ConfigMap are evaluated, with access entries taking precedence.",
-            f"The ConfigMap maps {principals} principal(s); "
-            f"{len(ctx.eks.access_entries) if ctx.eks else 0} access entr(ies) exist.",
+            f"The ConfigMap maps {count_noun(principals, 'principal')}; "
+            f"{count_noun(len(ctx.eks.access_entries) if ctx.eks else 0, 'access entry', 'access entries')} exist.",
         )
         remediation = (
             "Create an access entry for every principal still served by the ConfigMap, using the "
@@ -281,7 +292,8 @@ def aws_auth_posture(ctx: RuleContext) -> list[Finding]:
                      "cluster's authenticationMode could not be read from the EKS API, so this "
                      "finding is unverified."
             ),
-            f"mapUsers / mapRoles is hand-edited YAML covering {principals} principal(s); "
+            f"mapUsers / mapRoles is hand-edited YAML covering "
+            f"{count_noun(principals, 'principal')}; "
             f"mapAccounts: {join_names(ctx.map_accounts) if ctx.map_accounts else 'empty'}.",
         )
         remediation = (

@@ -153,6 +153,22 @@ def _tokenise(text: str) -> list[str]:
 # --------------------------------------------------------------------------- #
 # Formatting helpers shared by the rule modules
 # --------------------------------------------------------------------------- #
+def count_noun(count: int, singular: str, plural: Optional[str] = None) -> str:
+    """Render ``3 roles`` / ``1 role``.
+
+    Findings are read by people; "1 ClusterRole(s)" and "2 entr(ies)" read as
+    machine output and undercut the report's credibility.
+    """
+    if count == 1:
+        return f"{count} {singular}"
+    return f"{count} {plural or singular + 's'}"
+
+
+def agrees(count: int, singular_verb: str, plural_verb: str) -> str:
+    """Pick the verb form matching ``count`` — "1 role grants", "2 roles grant"."""
+    return singular_verb if count == 1 else plural_verb
+
+
 def join_names(items: tuple[str, ...], limit: int = 12) -> str:
     """Comma-join with an explicit overflow count — never a silent truncation."""
     if not items:

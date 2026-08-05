@@ -14,7 +14,15 @@ from .config import (
     DEFAULT_SERVICE_ACCOUNT,
 )
 from .models import Finding, RoleInfo
-from .rules_common import RuleContext, join_names, looks_controller_sa, looks_read_only, principal_list
+from .rules_common import (
+    RuleContext,
+    agrees,
+    count_noun,
+    join_names,
+    looks_controller_sa,
+    looks_read_only,
+    principal_list,
+)
 
 
 def deceptive_and_admin_equivalent_roles(ctx: RuleContext) -> list[Finding]:
@@ -168,7 +176,8 @@ def wildcard_cluster_roles(ctx: RuleContext) -> list[Finding]:
         return [
             Finding(
                 severity="HIGH",
-                title=f"{len(custom)} custom wildcard ClusterRole(s) grant unrestricted API access",
+                title=f"{count_noun(len(custom), 'custom wildcard ClusterRole')} "
+                      f"{agrees(len(custom), 'grants', 'grant')} unrestricted API access",
                 evidence=tuple(evidence),
                 impact=(
                     "A wildcard ClusterRole is cluster-admin under another name. It bypasses "
@@ -236,7 +245,8 @@ def default_service_account_bindings(ctx: RuleContext) -> list[Finding]:
     return [
         Finding(
             severity="CRITICAL" if escalated else "HIGH",
-            title=f"The default ServiceAccount is bound to {len(bound)} Role(s)/ClusterRole(s)",
+            title=f"The default ServiceAccount is bound to "
+                  f"{count_noun(len(bound), 'Role or ClusterRole', 'Roles or ClusterRoles')}",
             evidence=tuple(bound),
             impact=(
                 "Every pod in the namespace that does not name a ServiceAccount silently "
@@ -462,7 +472,8 @@ def caller_context(ctx: RuleContext) -> list[Finding]:
         evidence.append(f"Kubernetes server version: {ctx.meta.server_version}")
     if ctx.meta.caller_can_i:
         evidence.append(
-            f"kubectl auth can-i --list returned {len(ctx.meta.caller_can_i)} rule(s) for the "
+            f"kubectl auth can-i --list returned "
+            f"{count_noun(len(ctx.meta.caller_can_i), 'rule')} for the "
             f"auditing identity."
         )
     if ctx.meta.can_i_warning:

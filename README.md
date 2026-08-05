@@ -11,6 +11,13 @@ any kubectl context; get one self-contained HTML report that opens offline.
 python3 eks_rbac_audit.py --context my-cluster --open
 ```
 
+### 👉 [See a live example report](https://amartinawi.github.io/eks-rbac-audit/)
+
+[![Example report](docs/images/report-hero.png)](https://amartinawi.github.io/eks-rbac-audit/)
+
+<sub>Generated from a fictional cluster by
+[`examples/generate_demo.py`](examples/generate_demo.py). No real cluster was audited.</sub>
+
 It answers the questions an access review actually turns on:
 
 - Which IAM principals can reach the cluster, and which of them are cluster admins?
@@ -144,6 +151,18 @@ against unchanged cluster state produces a report differing only in its timestam
 
 ## What the report contains
 
+Each finding carries the evidence read from the cluster, the business impact, and
+the remediation — so the person who has to fix it does not have to go and work
+out what it means first.
+
+![A finding card](docs/images/report-findings.png)
+
+The EKS access-entry table is the part most audits are missing entirely:
+
+![EKS access entries](docs/images/report-access-entries.png)
+
+Full contents:
+
 - **Header** — cluster name, context, AWS account, region, server version, authentication mode, read-only badge.
 - **KPI tiles and severity bar** — mapped principals, cluster admins, custom ClusterRoles, findings, namespaces, ServiceAccounts.
 - **Executive summary** — assembled from the findings, plus an explicit list of controls verified sound.
@@ -203,6 +222,7 @@ A clean result and an unchecked one must never look the same.
 
 | | |
 |---|---|
+| [Live example report](https://amartinawi.github.io/eks-rbac-audit/) | What the tool actually produces, from a fictional cluster |
 | [docs/findings.md](docs/findings.md) | Every rule: what it detects, why that severity, what looks similar but is fine |
 | [docs/architecture.md](docs/architecture.md) | Module map, data flow, and why the layers split where they do |
 | [docs/writing-rules.md](docs/writing-rules.md) | How to add a finding rule |

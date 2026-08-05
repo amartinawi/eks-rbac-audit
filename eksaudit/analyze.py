@@ -21,7 +21,7 @@ from .config import (
     severity_rank,
 )
 from .models import AuditResult, ClusterMeta, CommandRecord, EksAccess, Finding
-from .rules_common import RuleContext, looks_node_role
+from .rules_common import RuleContext, count_noun, looks_node_role
 
 
 def analyze(
@@ -262,7 +262,7 @@ def build_summary(
     admins = len(ctx.mappings and [m for m in ctx.mappings if m.is_master] or [])
     if ctx.aws_auth_present:
         sentences.append(
-            f"{len(ctx.mappings)} IAM principal(s) are mapped into the cluster through "
+            f"{count_noun(len(ctx.mappings), 'IAM principal')} are mapped into the cluster through "
             f"aws-auth, {admins} of them with cluster-admin."
         )
     if ctx.eks is not None and ctx.eks.authentication_mode:
